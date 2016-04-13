@@ -1,11 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -13,75 +7,87 @@ namespace ProxyChecker
 {
     public partial class MainFrom : Form
     {
-        ProxyDataModel proxyDataModel = new ProxyDataModel();
+        private readonly ProxyDataModel _proxyDataModel = new ProxyDataModel();
+        public static int MaxParallelism { set; get; } = 32;
 
-        TestProgressForm testProgressForm = null;
+        private TestProgressForm _testProgressForm;
 
         public MainFrom()
         {
             InitializeComponent();
 
-            this.ProxyDataGridView.DataSource = this.proxyDataModel.Table;
+            ProxyDataGridView.DataSource = _proxyDataModel.Table;
         }
 
-        public void Log(string message)
+        private void Log(string message)
         {
-            this.textBoxLog.Text = message + "\n" + this.textBoxLog.Text;
+            textBoxLog.Text = message + @"
+" + textBoxLog.Text;
         }
 
         private void btnAddProxy_Click(object sender, EventArgs e)
         {
-            AddProxyForm form = new AddProxyForm();
+            var form = new AddProxyForm();
             form.ShowDialog();
-            if (form.DialogResult == System.Windows.Forms.DialogResult.OK)
+            if (form.DialogResult == DialogResult.OK)
             {
-                this.proxyDataModel.AddProxyList(form.GetData());
+                _proxyDataModel.AddProxyList(form.GetData());
             }
         }
 
         private void btnStartTest_Click(object sender, EventArgs e)
         {
-            IList<Proxy> proxyList = this.proxyDataModel.ProxyList;
-            this.testProgressForm = new TestProgressForm();
-            this.testProgressForm.Show();
-            this.testProxyList();
+            var proxyList = _proxyDataModel.ProxyList;
+            _testProgressForm = new TestProgressForm();
+            _testProgressForm.Show();
+            TestProxyList();
         }
 
-        private void testProxyList()
+        private void TestProxyList()
         {
-            int proxyNum = this.proxyDataModel.ProxyList.Count;
-            int proxyTested = 0;
+            var proxyNum = _proxyDataModel.ProxyList.Count;
+            var proxyTested = 0;
 
-            this.Enabled = false;
+            Enabled = false;
             Task.Factory.StartNew(() =>
             {
-                Parallel.ForEach(this.proxyDataModel.ProxyList, new ParallelOptions() { MaxDegreeOfParallelism = 32 }, proxy =>
+                Parallel.ForEach(_proxyDataModel.ProxyList, new ParallelOptions {MaxDegreeOfParallelism = MaxDegreeOfParallelism}, proxy =>
                 {
                     proxy.PerformTest();
                     ++proxyTested;
-                    this.BeginInvoke((MethodInvoker)delegate {
-                        this.updateTestProgress(Convert.ToInt16(proxyTested * 100.0 / proxyNum));
-                    });
+                    BeginInvoke(
+                        (MethodInvoker)
+                            delegate { UpdateTestProgress(Convert.ToInt16(proxyTested*100.0/proxyNum)); });
                 });
 
-                this.BeginInvoke((MethodInvoker)delegate {
-                    this.testProgressForm.Close();
-                    this.testProgressForm = null;
-                    this.Enabled = true;
-                });                
+                BeginInvoke((MethodInvoker) delegate
+                {
+                    _testProgressForm.Close();
+                    _testProgressForm = null;
+                    Enabled = true;
+                });
             });
         }
 
         private void btnRemoveAll_Click(object sender, EventArgs e)
         {
-            this.proxyDataModel.RemoveAll();
+            _proxyDataModel.RemoveAll();
         }
 
-        private void updateTestProgress(int progress)
+        private void UpdateTestProgress(int progress)
         {
-            this.Log(progress.ToString());
-            this.testProgressForm.SetProgress(progress);
-            this.proxyDataModel.UpdateTable();
+            Log(progress.ToString());
+            _testProgressForm.SetProgress(progress);
+            _proxyDataModel.UpdateTable();
         }
+
+        private void butSettings_Click(object sender, EventArgs e) {
+            var form = new SettingsFrom();
+            form.ShowDialog();
+            
+
+        }
+        }
+
     }
-}
+

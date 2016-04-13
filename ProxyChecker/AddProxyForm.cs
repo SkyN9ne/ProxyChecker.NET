@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ProxyChecker
@@ -20,28 +14,29 @@ namespace ProxyChecker
 
         private void btnOk_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.OK;
+            DialogResult = DialogResult.OK;
+      
         }
 
         private void btnStorno_Click(object sender, EventArgs e)
         {
-            this.DialogResult = DialogResult.Cancel;
+            DialogResult = DialogResult.Cancel;
         }
 
-        public IList<Proxy> GetData()
+        public IEnumerable<Proxy> GetData()
         {
             IList<Proxy> proxyList = new List<Proxy>();
 
-            using (StringReader reader = new StringReader(this.proxyTextBox.Text))
+            using (var reader = new StringReader(proxyTextBox.Text))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    Proxy p = Proxy.Parse(line);
+                    var p = Proxy.Parse(line);
                     if (p != null)
                     {
                         proxyList.Add(p);
-                    }                    
+                    }
                 }
             }
 
