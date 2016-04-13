@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace ProxyChecker
 {
     public partial class MainFrom : Form
     {
+        private Thread ForThread;
+
         private readonly ProxyDataModel _proxyDataModel = new ProxyDataModel();
         public static int MaxParallelism { set; get; } = 32;
 
@@ -37,36 +40,43 @@ namespace ProxyChecker
 
         private void btnStartTest_Click(object sender, EventArgs e)
         {
+            
             var proxyList = _proxyDataModel.ProxyList;
             _testProgressForm = new TestProgressForm();
             _testProgressForm.Show();
-            TestProxyList();
+            ForThread=new Thread(TestProxyList) {IsBackground = true};
+            ForThread.Start();
+            
         }
 
         private void TestProxyList()
         {
+
             var proxyNum = _proxyDataModel.ProxyList.Count;
             var proxyTested = 0;
 
-            Enabled = false;
-            Task.Factory.StartNew(() =>
+
+            Invoke(new Action(() => Enabled = false));
+           Task.Factory.StartNew(() =>
             {
                 Parallel.ForEach(_proxyDataModel.ProxyList, new ParallelOptions {MaxDegreeOfParallelism = MaxParallelism}, proxy =>
                 {
                     proxy.PerformTest();
                     ++proxyTested;
-                    BeginInvoke(
-                        (MethodInvoker)
-                            delegate { UpdateTestProgress(Convert.ToInt16(proxyTested*100.0/proxyNum)); });
+                    Invoke(new Action(() => UpdateTestProgress(Convert.ToInt16(proxyTested*100.0/proxyNum))));
                 });
 
-                BeginInvoke((MethodInvoker) delegate
+                
+                Invoke(new Action(() =>
                 {
                     _testProgressForm.Close();
                     _testProgressForm = null;
                     Enabled = true;
-                });
+                }));
+
+
             });
+            
         }
 
         private void btnRemoveAll_Click(object sender, EventArgs e)
@@ -84,8 +94,7 @@ namespace ProxyChecker
         private void butSettings_Click(object sender, EventArgs e) {
             var form = new SettingsFrom();
             form.ShowDialog();
-            
-
+     
         }
         }
 
