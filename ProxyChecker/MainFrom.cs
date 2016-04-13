@@ -51,7 +51,7 @@ namespace ProxyChecker
             Enabled = false;
             Task.Factory.StartNew(() =>
             {
-                Parallel.ForEach(_proxyDataModel.ProxyList, new ParallelOptions {MaxDegreeOfParallelism = MaxDegreeOfParallelism}, proxy =>
+                Parallel.ForEach(_proxyDataModel.ProxyList, new ParallelOptions {MaxDegreeOfParallelism = MaxParallelism}, proxy =>
                 {
                     proxy.PerformTest();
                     ++proxyTested;
