@@ -7,6 +7,8 @@ namespace ProxyChecker
 {
     public partial class AddProxyForm : Form
     {
+		  //faasdf
+		
         public AddProxyForm()
         {
             InitializeComponent();
